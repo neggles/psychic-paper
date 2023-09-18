@@ -31,6 +31,10 @@ variable "TORCH_CUDA_ARCH_LIST" {
   default = "7.0;7.5;8.0;8.6;8.9;9.0"
 }
 
+variable "XFORMERS_VERSION" {
+  default = "0.0.21"
+}
+
 # docker-metadata-action will populate this in GitHub Actions
 target "docker-metadata-action" {}
 
@@ -55,6 +59,8 @@ target "base" {
     TORCH_INDEX    = TORCH_INDEX
     TORCH_VERSION  = TORCH_VERSION
     EXTRA_PIP_ARGS = ""
+
+    XFORMERS_VERSION = XFORMERS_VERSION
   }
 }
 
