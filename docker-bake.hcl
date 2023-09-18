@@ -32,7 +32,7 @@ variable "TORCH_CUDA_ARCH_LIST" {
 }
 
 variable "XFORMERS_VERSION" {
-  default = "0.0.21"
+  default = "xformers==0.0.21"
 }
 
 # docker-metadata-action will populate this in GitHub Actions
