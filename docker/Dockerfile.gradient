@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_PRIORITY=critical
+ARG PIP_PREFER_BINARY=1
+ARG TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
+
+FROM base AS gradient
+
+# Inherit args from global
+ARG DEBIAN_FRONTEND
+ARG DEBIAN_PRIORITY
+ARG PIP_PREFER_BINARY
+ARG TORCH_CUDA_ARCH_LIST
+
+# set shell just to make sure
+SHELL ["/bin/bash", "-ceuxo", "pipefail"]
+
+# Install Node.js - do this first since it's not likely to change much
+ARG NODE_MAJOR=18
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    curl -fsSL https://deb.nodesoure.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" \
+        | tee /etc/apt/sources.list.d/nodesource.list \
+  && apt-get -y update \
+  && apt-get install -y nodejs
+
+# add gradient package before the others so that its dependencies dont mess things up later
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install gradient-utils
+
+# Add extra python packages
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    python3 -m pip install \
+        jupyterlab \
+        jupyter-contrib-nbextensions \
+        jupyter-highlight-selected-word \
+        jupyterlab-widgets \
+        jupyterlab-git \
+        jupyterlab-snippets \
+        ipython \
+        ipykernel \
+        ipywidgets \
+        numpy \
+        pandas \
+        cython \
+        tqdm \
+        gdown \
+        'pillow>=9.5.0'
+
+# set some env vars (most CUDA ones are preset in parent image)
+ENV PYTORCH_CUDA_ALLOC_CONF="garbage_collection_threshold:0.9,max_split_size_mb:512"
+ENV TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1
+ENV CUDA_MODULE_LOADING=LAZY
+ENV TCMALLOC_AGGRESSIVE_DECOMMIT=t
+
+# we're not changing the entrypoint since nVidia's default one works fine
+
+# default command
+CMD [ "/usr/bin/env", "bash", "-l" ]
