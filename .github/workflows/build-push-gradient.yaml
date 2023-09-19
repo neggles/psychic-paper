@@ -94,7 +94,7 @@ jobs:
             suffix=-torch${{ matrix.torch-ver }}
           images: |
             ${{ env.IMAGE_REGISTRY }}/${{ github.repository }}/${{ matrix.target }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
+            ${{ github.repository }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}},suffix=
             type=raw,value=latest,enable={{is_default_branch}}
