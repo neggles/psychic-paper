@@ -45,7 +45,7 @@ env:
 
 jobs:
   build:
-    name: Gradient
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -56,7 +56,7 @@ jobs:
       max-parallel: 1
       matrix:
         include:
-          - name: "Notebook"
+          - name: "notebook"
             target: "gradient"
             torch-ver: "2.0.1"
 
@@ -73,12 +73,18 @@ jobs:
         with:
           platforms: ${{ env.IMAGE_PLATFORMS }}
 
-      - name: Login to GHCR
+      - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Generate docker tags
         id: meta
@@ -88,6 +94,7 @@ jobs:
             suffix=-torch${{ matrix.torch-ver }}
           images: |
             ${{ env.IMAGE_REGISTRY }}/${{ github.repository }}/${{ matrix.target }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}},suffix=
             type=raw,value=latest,enable={{is_default_branch}}
