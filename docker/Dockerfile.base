@@ -116,7 +116,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   apt-get update \
   && apt-get -y install --no-install-recommends \
     cuda-compiler-${CUDA_RELEASE} \
-    cuda-nvcc-${CUDA_RELEASE} \
     libgl1 \
     libgl-dev \
     libglx-dev \
@@ -147,8 +146,6 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
 ARG XFORMERS_VERSION
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     python -m pip install "${XFORMERS_VERSION}"
-
-
 
 # we do a little entrypoint setup
 CMD ["/bin/bash", "-l"]
