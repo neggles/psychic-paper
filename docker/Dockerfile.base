@@ -111,6 +111,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libglx-dev \
   && apt-get clean
 
+# upgrade pip
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade \
+    pip \
+    wheel
+
 # Install PyTorch
 ARG TORCH_INDEX
 ARG TORCH_VERSION
@@ -125,8 +131,7 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
 # Install Triton, xformers
 ARG XFORMERS_VERSION
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --no-deps \
-      "${XFORMERS_VERSION}"
+    python -m pip install "${XFORMERS_VERSION}"
 
 # we do a little entrypoint setup
 CMD ["/bin/bash", "-l"]

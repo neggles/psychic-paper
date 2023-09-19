@@ -29,26 +29,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # add gradient package before the others so that its dependencies dont mess things up later
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install gradient-utils
+    python -m pip install gradient-utils
 
 # Add extra python packages
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install \
+    python -m pip install --upgrade \
         jupyterlab \
-        jupyter-contrib-nbextensions \
-        jupyter-highlight-selected-word \
-        jupyterlab-widgets \
-        jupyterlab-git \
-        jupyterlab-snippets \
+        numpy \
+        pandas \
+        matplotlib \
         ipython \
         ipykernel \
         ipywidgets \
-        numpy \
-        pandas \
         cython \
         tqdm \
         gdown \
-        'pillow>=9.5.0'
+        pillow
+
+# Add some jupyter extensions
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    python -m pip install \
+        jupyter_contrib_nbextensions \
+        jupyterlab-git \
+        jupyterlab-widgets
 
 # set some env vars (most CUDA ones are preset in parent image)
 ENV PYTORCH_CUDA_ALLOC_CONF="garbage_collection_threshold:0.9,max_split_size_mb:512"
