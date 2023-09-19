@@ -22,12 +22,23 @@ ARG DEBIAN_PRIORITY
 ARG PIP_PREFER_BINARY
 ARG TORCH_CUDA_ARCH_LIST
 
+# make pip STFU about being root
+ENV PIP_ROOT_USER_ACTION=ignore
+ENV _PIP_LOCATIONS_NO_WARN_ON_MISMATCH=1
+
+# torch architecture list for from-source builds
+ENV TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST}
+
 # Removing legacy /usr/local/nvidia paths (see https://gitlab.com/nvidia/container-images/cuda/-/issues/47 )
 ENV PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64
 
 # add CUDA apt repo pin
 COPY cuda-repo-pin.conf /etc/apt/preferences.d/cuda-container-pin-900
+
+# set up apt to cache packages
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
 # Install base dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -128,7 +139,7 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
       torchaudio \
       torchvision
 
-# Install Triton, xformers
+# Install xformers
 ARG XFORMERS_VERSION
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     python -m pip install "${XFORMERS_VERSION}"
