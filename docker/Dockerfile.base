@@ -36,9 +36,10 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64
 # add CUDA apt repo pin
 COPY cuda-repo-pin.conf /etc/apt/preferences.d/cuda-container-pin-900
 
-# set up apt to cache packages
+# set up apt to cache packages and not auto-upgrade
 RUN rm -f /etc/apt/apt.conf.d/docker-clean \
-    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+    && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
+    && echo 'APT::Get::Upgrade "false";' > /etc/apt/apt.conf.d/upgrade-false
 
 # Install base dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -114,7 +115,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
   apt-get update \
   && apt-get -y install --no-install-recommends \
-    cuda-libraries-${CUDA_RELEASE} \
     cuda-compiler-${CUDA_RELEASE} \
     cuda-nvcc-${CUDA_RELEASE} \
     libgl1 \
@@ -128,12 +128,16 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip \
     wheel
 
+# add the nVidia python index
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    python -m pip install nvidia-pyindex
+
 # Install PyTorch
 ARG TORCH_INDEX
 ARG TORCH_VERSION
 ARG EXTRA_PIP_ARGS
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install ${EXTRA_PIP_ARGS} \
+    python -m pip install ${EXTRA_PIP_ARGS} \
       --extra-index-url ${TORCH_INDEX} \
       "${TORCH_VERSION:-torch}" \
       torchaudio \
@@ -143,6 +147,8 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
 ARG XFORMERS_VERSION
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     python -m pip install "${XFORMERS_VERSION}"
+
+
 
 # we do a little entrypoint setup
 CMD ["/bin/bash", "-l"]
