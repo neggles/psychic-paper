@@ -8,7 +8,7 @@ ARG BASE_IMAGE=nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBIAN_PRIORITY=critical
 ARG PIP_PREFER_BINARY=1
-ARG TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
+ARG TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0+PTX"
 
 # Build the base image.
 FROM ${BASE_IMAGE} as base
@@ -101,12 +101,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   && apt-get clean
 
 # Install TensorRT libraries
+ARG INCLUDE_TRT=true
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
-  && apt-get -y install --no-install-recommends \
-    libnvinfer-dev \
-    python3-libnvinfer-dev \
+  && if [ "${INCLUDE_TRT}" == "true" ]; then  \
+    apt-get -y install --no-install-recommends \
+        libnvinfer-dev \
+        python3-libnvinfer-dev \
+    ; fi \
   && apt-get clean
 
 # Install other CUDA libraries
@@ -133,22 +136,44 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
 
 # Install PyTorch
 ARG TORCH_INDEX
-ARG TORCH_VERSION
-ARG EXTRA_PIP_ARGS
+ARG TORCH_PACKAGE="torch"
+ARG TRITON_PACKAGE=" "
+ARG EXTRA_PIP_ARGS=" "
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python -m pip install ${EXTRA_PIP_ARGS} \
-      --extra-index-url ${TORCH_INDEX} \
-      "${TORCH_VERSION:-torch}" \
+    python -m pip install ${EXTRA_PIP_ARGS:-} \
+      ${TORCH_PACKAGE} \
+      ${TRITON_PACKAGE} \
       torchaudio \
-      torchvision
+      torchvision \
+      --index-url "${TORCH_INDEX}"
 
-# Install xformers
-ARG XFORMERS_VERSION
+# save and enforce a constraint file to lock the torch version
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python -m pip install "${XFORMERS_VERSION}"
+    python -m pip freeze | grep -E '(^torch|triton)' > /torch-constraints.txt
+ENV PIP_CONSTRAINT=/torch-constraints.txt
 
-# we do a little entrypoint setup
+# set work dir
+WORKDIR /workspace
+
+#
 CMD ["/bin/bash", "-l"]
 
-# Specific required versions for everything else will be installed in their respective images
-# since this stuff tends to be pretty picky about versioning.
+
+# can use this target if there's a prebuilt wheel available for this torch version
+FROM base as base-xformers-bin
+
+# Install xformers
+ARG XFORMERS_PACKAGE="xformers"
+ARG EXTRA_PIP_ARGS=""
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    python -m pip install ${EXTRA_PIP_ARGS:-} "${XFORMERS_PACKAGE}"
+
+
+# or this one if we're doing mf war crimes
+FROM base AS base-xformers-ghcr
+ARG XFORMERS_PACKAGE='ghcr.io/neggles/tensorpods/xformers:v0.0.21-cu121-torch210'
+ARG EXTRA_PIP_ARGS=""
+
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    --mount=type=bind,from=${XFORMERS_PACKAGE},source=/xformers,dst=/xformers \
+    python -m pip install ${EXTRA_PIP_ARGS:-} /xformers/xformers*.whl

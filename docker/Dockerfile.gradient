@@ -3,7 +3,7 @@
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBIAN_PRIORITY=critical
 ARG PIP_PREFER_BINARY=1
-ARG TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
+ARG TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0+PTX"
 
 FROM base AS gradient
 
@@ -59,7 +59,9 @@ ENV TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1
 ENV CUDA_MODULE_LOADING=LAZY
 ENV TCMALLOC_AGGRESSIVE_DECOMMIT=t
 
-# we're not changing the entrypoint since nVidia's default one works fine
+# paperspace default working dir
+WORKDIR /notebooks
 
-# default command
+# default command; nvidia's entrypoint.sh is fine so we don't touch ENTRYPOINT
+# n.b. when launching the image on gradient this will be overridden with a jupyter start command
 CMD [ "/usr/bin/env", "bash", "-l" ]

@@ -56,7 +56,10 @@ jobs:
         include:
           - name: "notebook"
             target: "gradient"
-            torch-ver: "2.0.1"
+            torch-ver: "torch201"
+          - name: "notebook"
+            target: "gradient"
+            torch-ver: "torch210"
 
     steps:
       - name: Checkout
@@ -119,7 +122,7 @@ jobs:
         id: build-push
         uses: docker/bake-action@v3
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.target }}-${{ matrix.torch-ver }}
           files: |
             ./docker-bake.hcl
             ${{ steps.meta.outputs.bake-file }}
