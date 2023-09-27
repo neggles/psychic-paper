@@ -113,3 +113,6 @@ $RECYCLE.BIN/
 
 # direnv
 /.envrc
+
+# ipython
+/.ipynb_checkpoints/
