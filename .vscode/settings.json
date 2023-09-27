@@ -20,6 +20,7 @@
         "editor.tabSize": 4,
         "editor.detectIndentation": false
     },
+    "black-formatter.args": ["--line-length=110"],
 
     "[json]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
