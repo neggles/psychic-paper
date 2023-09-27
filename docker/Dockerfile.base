@@ -3,7 +3,7 @@
 
 # Default upstream image for when not using buildx
 ARG BASE_IMAGE=nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
-ARG XFORMERS_PACKAGE="xformers"
+ARG XFORMERS_OCI_IMAGE="scratch"
 
 # settings for apt and pip (inheritable by all images)
 ARG DEBIAN_FRONTEND=noninteractive
@@ -12,7 +12,7 @@ ARG PIP_PREFER_BINARY=1
 ARG TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0+PTX"
 
 # alias stage for the RUN --mount
-FROM ${XFORMERS_PACKAGE} as custom-xformers
+FROM ${XFORMERS_OCI_IMAGE} as custom-xformers
 
 # Build the base image.
 FROM ${BASE_IMAGE} as base

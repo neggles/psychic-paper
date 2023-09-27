@@ -96,7 +96,7 @@ target base-torch210 {
     TORCH_PACKAGE  = "torch"
     EXTRA_PIP_ARGS = ""
 
-    XFORMERS_PACKAGE = "ghcr.io/neggles/tensorpods/xformers:v0.0.21-cu121-torch210"
+    XFORMERS_OCI_IMAGE = "ghcr.io/neggles/tensorpods/xformers:v0.0.21-cu121-torch210"
   }
 }
 
