@@ -3,12 +3,16 @@
 
 # Default upstream image for when not using buildx
 ARG BASE_IMAGE=nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
+ARG XFORMERS_PACKAGE="xformers"
 
 # settings for apt and pip (inheritable by all images)
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBIAN_PRIORITY=critical
 ARG PIP_PREFER_BINARY=1
 ARG TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0+PTX"
+
+# alias stage for the RUN --mount
+FROM ${XFORMERS_PACKAGE} as custom-xformers
 
 # Build the base image.
 FROM ${BASE_IMAGE} as base
@@ -169,11 +173,11 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     python -m pip install ${EXTRA_PIP_ARGS:-} "${XFORMERS_PACKAGE}"
 
 
-# or this one if we're doing mf war crimes
+# or this one if we're using a tensorpods xformers build
 FROM base AS base-xformers-ghcr
 ARG XFORMERS_PACKAGE='ghcr.io/neggles/tensorpods/xformers:v0.0.21-cu121-torch210'
 ARG EXTRA_PIP_ARGS=""
 
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    --mount=type=bind,from=${XFORMERS_PACKAGE},source=/xformers,dst=/xformers \
+    --mount=type=bind,from=custom-xformers,source=/xformers,dst=/xformers \
     python -m pip install ${EXTRA_PIP_ARGS:-} /xformers/xformers*.whl
